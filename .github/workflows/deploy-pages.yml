@@ -72,6 +72,51 @@ jobs:
               <meta charset="utf-8" />
               <meta name="viewport" content="width=device-width, initial-scale=1" />
               <title>{escape(title)}</title>
+              <style data-footer-adsense-style>
+                .footer-adsense {{
+                  width: 100%;
+                  display: grid;
+                  gap: 12px;
+                  margin-top: 24px;
+                  padding-top: 18px;
+                  border-top: 1px solid rgba(28, 25, 23, 0.12);
+                }}
+                .footer-adsense__label {{
+                  margin: 0;
+                  font-size: 12px;
+                  letter-spacing: 0.14em;
+                  text-transform: uppercase;
+                  color: var(--muted);
+                }}
+                .footer-adsense__unit {{
+                  display: block;
+                  width: 100%;
+                  min-height: 90px;
+                }}
+              </style>
+              <script src="./adsense-config.js"></script>
+              <script>
+                (function () {{
+                  const config = window.__FOOTER_ADSENSE__;
+                  if (
+                    !config ||
+                    !config.client ||
+                    !config.slot ||
+                    document.querySelector("script[data-footer-adsense-loader]")
+                  ) {{
+                    return;
+                  }}
+
+                  const script = document.createElement("script");
+                  script.async = true;
+                  script.src =
+                    "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=" +
+                    encodeURIComponent(config.client);
+                  script.crossOrigin = "anonymous";
+                  script.dataset.footerAdsenseLoader = "true";
+                  document.head.appendChild(script);
+                }})();
+              </script>
               <style>
                 :root {{
                   --bg: #f4efe7;
@@ -156,6 +201,38 @@ jobs:
                   </div>
                   <h2>README excerpt</h2>
                   <pre>{escape(excerpt)}</pre>
+                  <div class="footer-adsense" data-footer-adsense hidden>
+                    <p class="footer-adsense__label">Advertisement</p>
+                    <ins
+                      class="adsbygoogle footer-adsense__unit"
+                      style="display:block"
+                      data-ad-format="auto"
+                      data-full-width-responsive="true"
+                    ></ins>
+                  </div>
+                  <script>
+                    (function () {{
+                      const wrapper = document.currentScript.previousElementSibling;
+                      const config = window.__FOOTER_ADSENSE__;
+                      if (!wrapper || !config || !config.client || !config.slot) {{
+                        return;
+                      }}
+
+                      const unit = wrapper.querySelector(".adsbygoogle");
+                      if (!unit) {{
+                        return;
+                      }}
+
+                      unit.setAttribute("data-ad-client", config.client);
+                      unit.setAttribute("data-ad-slot", config.slot);
+                      wrapper.hidden = false;
+                      try {{
+                        (window.adsbygoogle = window.adsbygoogle || []).push({{}});
+                      }} catch (error) {{
+                        console.error("Footer AdSense failed to render", error);
+                      }}
+                    }})();
+                  </script>
                 </section>
               </main>
             </body>
@@ -165,6 +242,20 @@ jobs:
           out = Path("_site")
           out.mkdir(exist_ok=True)
           (out / "index.html").write_text(page, encoding="utf-8")
+          config_path = Path("adsense-config.js")
+          config_text = (
+              config_path.read_text(encoding="utf-8")
+              if config_path.exists()
+              else 'window.__FOOTER_ADSENSE__ = window.__FOOTER_ADSENSE__ || {{\\n  client: "",\\n  slot: "",\\n}};\\n'
+          )
+          (out / "adsense-config.js").write_text(config_text, encoding="utf-8")
+          ads_txt_path = Path("ads.txt")
+          ads_txt = (
+              ads_txt_path.read_text(encoding="utf-8")
+              if ads_txt_path.exists()
+              else "google.com, pub-1136615378807810, DIRECT, f08c47fec0942fa0"
+          )
+          (out / "ads.txt").write_text(ads_txt, encoding="utf-8")
           PY
 
       - name: Upload Pages artifact
